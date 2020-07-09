@@ -422,7 +422,7 @@ module.exports = (port, host, argv) => Promise.resolve()
         }
     });
 
-    it('editor.action.triggerSuggest', async function () {
+    it.only('editor.action.triggerSuggest', async function () {
         const editor = await openEditor(serverUri);
         // const { [|Container] } = require('inversify');
         editor.getControl().setPosition({ lineNumber: 5, column: 9 });
@@ -524,6 +524,8 @@ module.exports = (port, host, argv) => Promise.resolve()
         keybindings.dispatchKeyDown('Enter', input);
 
         await renaming;
+        await waitForAnimation(() => !(document.activeElement instanceof HTMLInputElement));
+
         assert.isTrue(contextKeyService.match('editorTextFocus'));
         assert.isFalse(contextKeyService.match('renameInputVisible'));
 
