@@ -422,7 +422,7 @@ module.exports = (port, host, argv) => Promise.resolve()
         }
     });
 
-    it.only('editor.action.triggerSuggest', async function () {
+    it('editor.action.triggerSuggest', async function () {
         const editor = await openEditor(serverUri);
         // const { [|Container] } = require('inversify');
         editor.getControl().setPosition({ lineNumber: 5, column: 9 });
