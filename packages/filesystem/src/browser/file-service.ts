@@ -63,6 +63,9 @@ import type { TextDocumentContentChangeEvent } from 'vscode-languageserver-proto
 import { EncodingRegistry } from '@theia/core/lib/browser/encoding-registry';
 import { UTF8, UTF8_with_bom } from '@theia/core/lib/common/encodings';
 import { EncodingService, ResourceEncoding } from '@theia/core/lib/common/encoding-service';
+import { ApplicationShell } from '@theia/core/lib/browser/shell/application-shell';
+import { Saveable } from '@theia/core/lib/browser/saveable';
+import { NavigatableWidget } from '@theia/core/lib/browser/navigatable';
 
 export interface FileOperationParticipant {
 
@@ -192,6 +195,9 @@ export interface FileSystemProviderActivationEvent extends WaitUntilEvent {
 export class FileService {
 
     private readonly BUFFER_SIZE = 64 * 1024;
+
+    @inject(ApplicationShell)
+    protected readonly shell: ApplicationShell;
 
     @inject(LabelProvider)
     protected readonly labelProvider: LabelProvider;
@@ -1088,6 +1094,16 @@ export class FileService {
         const event = { correlationId: this.correlationIds++, operation: FileOperation.DELETE, target: resource };
         await WaitUntilEvent.fireAsync(this.onWillRunUserOperationEmitter, event);
         try {
+            // revert dirty models that they can be closed
+            const reverting = [];
+            for (const [, widget] of NavigatableWidget.getAffected(this.shell.widgets, resource)) {
+                const saveable = Saveable.getDirty(widget);
+                if (saveable && saveable.revert) {
+                    reverting.push(saveable.revert({ soft: true }));
+                }
+            }
+            await Promise.all(reverting);
+
             await this.doDelete(resource, options);
         } catch (error) {
             await WaitUntilEvent.fireAsync(this.onDidFailUserOperationEmitter, event);
