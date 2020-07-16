@@ -139,12 +139,17 @@ export class VSXExtensionsModel {
             const searchResult = new Set<string>();
             for (const data of result.extensions) {
                 const id = data.namespace.toLowerCase() + '.' + data.name.toLowerCase();
+                const compatibleVersion = await this.api.getLatestCompatibleVersion(data.allVersions);
+                if (!compatibleVersion) {
+                    continue;
+                }
                 this.setExtension(id).update(Object.assign(data, {
                     publisher: data.namespace,
-                    downloadUrl: data.files.download,
+                    downloadUrl: data.url, // TODO: fix the download url to use the compatible version and not latest.
                     iconUrl: data.files.icon,
                     readmeUrl: data.files.readme,
                     licenseUrl: data.files.license,
+                    version: compatibleVersion.version
                 }));
                 searchResult.add(id);
             }
